@@ -4,7 +4,9 @@ using AuthService.Domain.Entity;
 using AuthService.Infrastructure.Contract;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+//using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -19,95 +21,129 @@ namespace AuthService.Service.Implementation
     {
         public IUnitOfWork UnitOfWork;
         private readonly IConfiguration _configuration;
-        private readonly UserManager<AppUser> _userManager;
-        public UserService(IUnitOfWork _unitOfWork, IConfiguration configuration, UserManager<AppUser> userManager)
+        private readonly ILogger<UserService> _logger;
+        public UserService(IUnitOfWork _unitOfWork, IConfiguration configuration, ILogger<UserService> logger)
         {
             UnitOfWork = _unitOfWork;
-            _userManager = userManager;
+            
+            _logger = logger;
             _configuration = configuration;
         }
 
-        public async Task<string> Register(RegistrationDTOs RegDtos)
+        public async Task<UserResponseDetails> Register(RegistrationDTOs RegDtos)
         {
-
-            var authClaims = new List<Claim>
+            try
+            {
+                //generating token
+                var authClaims = new List<Claim>
         {
             new(ClaimTypes.Name, RegDtos.Username),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
 
-            var token = GetToken(authClaims);
+                var token = GetToken(authClaims);
 
-            var finalToken = new JwtSecurityTokenHandler().WriteToken(token);
-            //check if email already exists
-            //var user_exist = await _userManager.FindByEmailAsync(RegDtos.Email);
-            var user_exist = await UnitOfWork.Users.UserExist(RegDtos);
+                var finalToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-            if (user_exist)
+
+
+                //check if email already exists
+                var user_exist = await UnitOfWork.Users.UserExist(RegDtos);
+
+                if (user_exist)
+                {
+                    _logger.LogError( "User already Endpoint");
+                    return new UserResponseDetails()
+                    {
+                        Message = $"User with the email {RegDtos.Email} already exists. please Login",
+                        IsSuccess = false
+                    };
+                };
+                //return $"User with the email {RegDtos.Email} already exists. please Login";
+
+
+
+                //create new user
+
+                var newuser = new AppUser()
+                {
+                    Email = RegDtos.Email,
+                    FirstName = RegDtos.FirstName,
+                    MiddleName = RegDtos.MiddleName,
+                    Address = RegDtos.Address,
+                    LastName = RegDtos.LastName,
+                    PhoneNumber = RegDtos.PhoneNumber,
+                    Dob = RegDtos.Dob,
+                    Gender = RegDtos.Gender,
+                    State = RegDtos.State,
+                    LocalGovernmentArea = RegDtos.LGA,
+                    Age = CalculateAgeFromDateOfBirth(RegDtos.Dob),
+                    UserName = RegDtos.Username,
+                    Title = RegDtos.Title,
+                    AccountType = RegDtos.AccountType,
+                    LandMark = RegDtos.LandMark,
+                    Nin = RegDtos.Nin,
+                    HasBvn = RegDtos.HasBvn,
+                    Bvn = RegDtos.Bvn,
+                    AccountNumber = Generate11DigitRandomNumber(),
+
+                };
+
+                var add = await UnitOfWork.Users.Add(newuser);
+                var save = await UnitOfWork.Save();
+
+                if (save < 1)
+                {
+                    _logger.LogError( "Server Error");
+                    return new UserResponseDetails()
+                    {
+                        Message = $"Server Error",
+                        IsSuccess = false
+                    };
+
+                }
+
+                var response = new ResponceRegistationDto()
+                {
+                    LastLogin = "Now",
+                    Token = finalToken,
+                    DailyLimitBalance = "",
+                    AccountNumber = newuser.AccountNumber,
+                    UserName = newuser.UserName,
+                    AccountName = $"{newuser.FirstName} {newuser.MiddleName} {newuser.LastName}",
+                    Title = newuser.Title,
+                    Gender = newuser.Gender,
+                    AccountType = newuser.AccountType,
+                    Bvn = newuser.Bvn,
+                    Nin = newuser.Nin,
+
+                    Status = "",
+
+
+                };
+
+
+                _logger.LogError( "User Successfully created");
+
+                return new UserResponseDetails()
+                {
+                    Message = "",
+                    IsSuccess = true,
+                    ResponseDetails = response
+                };
+            }
+            catch (Exception ex)
             {
-                return $"User with the email {RegDtos.Email} already exists. please Login";
+                _logger.LogError( "User Successfuly created");
+                return new UserResponseDetails()
+                {
+
+                    Message = "Unable to register User",
+                    IsSuccess = false
+                };
 
             }
 
-            //create new user
-
-            var newuser = new AppUser()
-            {
-                Email = RegDtos.Email,
-                FirstName = RegDtos.FirstName,
-                MiddleName = RegDtos.MiddleName,
-                Address = RegDtos.Address,
-                LastName = RegDtos.LastName,
-                PhoneNumber = RegDtos.PhoneNumber,
-                Dob = RegDtos.Dob,
-                Gender = RegDtos.Gender,
-                State = RegDtos.State,
-                LocalGovernmentArea = RegDtos.LGA,
-                Age = CalculateAgeFromDateOfBirth(RegDtos.Dob),
-                UserName = RegDtos.Username,
-                Title = RegDtos.Title,
-                AccountType = RegDtos.AccountType,
-                LandMark = RegDtos.LandMark,
-                Nin = RegDtos.Nin,
-                HasBvn = RegDtos.HasBvn,
-                Bvn = RegDtos.Bvn,
-                AccountNumber = Generate11DigitRandomNumber(),
-
-            };
-
-            var add = await UnitOfWork.Users.Add(newuser);
-            var save = await UnitOfWork.Save();
-
-            if (save <= 0)
-            {
-                return "Unable to register user";
-
-            }
-
-            var response = new ResponceRegistationDto()
-            {
-                LastLogin = "Now",
-                Token = finalToken,
-                DailyLimitBalance = "",
-                AccountNumber = newuser.AccountNumber,
-                UserName = newuser.UserName,
-                AccountName = newuser.FirstName + "" + newuser.MiddleName + "" + newuser.LastName,
-                Title = newuser.Title,
-                Gender = newuser.Gender,
-                AccountType = newuser.AccountType,
-                Bvn = newuser.Bvn,
-                Nin = newuser.Nin,
-
-                Status = "",
-
-
-            };
-
-
-
-
-            var outcome = "User successfully Created";
-            return outcome;
 
 
         }
@@ -156,4 +192,6 @@ namespace AuthService.Service.Implementation
         }
 
     }
+
+ 
 }

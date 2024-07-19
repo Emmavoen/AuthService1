@@ -18,6 +18,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 namespace AuthService.Api
 {
@@ -38,6 +39,19 @@ namespace AuthService.Api
             services.AddControllers().AddNewtonsoftJson(options =>
             options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             );
+
+            services.AddLogging(logging =>
+            {
+                Log.Logger = new LoggerConfiguration()
+                    .Enrich.FromLogContext()
+                    .MinimumLevel.Debug()
+                    .WriteTo.Console()
+                    .WriteTo.File("logs/authservice.txt", rollingInterval: RollingInterval.Day)
+                    .CreateLogger();
+
+                logging.AddSerilog();
+            });
+
             services.AddValidatorsFromAssemblyContaining<UserValidation>();
             services.AddTransient<ILocalGovernmentAreaRepository, LocalGovtAreaRepository>();
             services.AddTransient<IStatesRepository, StatesRepository>();
@@ -94,6 +108,8 @@ namespace AuthService.Api
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWT:Secret"]))
                 };
             });
+
+
 
         }
          

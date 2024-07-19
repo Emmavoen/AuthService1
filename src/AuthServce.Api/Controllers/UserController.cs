@@ -24,6 +24,7 @@ namespace AuthService.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegistrationDTOs RegDtos)
         {
+
             var validationResult = await Validator.ValidateAsync(RegDtos);
             if (!validationResult.IsValid)
             {

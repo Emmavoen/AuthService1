@@ -1,4 +1,5 @@
 ﻿using AuthService.Domain.DTOs.Request;
+using AuthService.Domain.DTOs.Responce;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace AuthService.Infrastructure.Contract
 {
     public interface IUserService
     {
-        Task<string> Register(RegistrationDTOs RegDtos);
+        Task<UserResponseDetails> Register(RegistrationDTOs RegDtos);
 
     }
 }
