@@ -50,6 +50,8 @@ namespace AuthService.Service.Implementation
                 //check if email already exists
                 var user_exist = await UnitOfWork.Users.UserExist(RegDtos);
 
+                
+
                 if (user_exist)
                 {
                     _logger.LogError( "User already Endpoint");

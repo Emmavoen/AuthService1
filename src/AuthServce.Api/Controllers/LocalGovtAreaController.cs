@@ -1,4 +1,5 @@
-﻿using AuthService.Infrastructure.Contract.Repository;
+﻿using AuthService.Infrastructure.Contract;
+using AuthService.Infrastructure.Contract.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,8 +9,8 @@ namespace AuthService.Api.Controllers
     [ApiController]
     public class LocalGovtAreaController : ControllerBase
     {
-        private readonly ILocalGovernmentAreaRepository area;
-        public LocalGovtAreaController(ILocalGovernmentAreaRepository _area)
+        private readonly ILocalGovtService area;
+        public LocalGovtAreaController(ILocalGovtService _area)
         {
             area = _area;
         }

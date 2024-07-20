@@ -10,6 +10,6 @@ namespace AuthService.Infrastructure.Contract
 {
     public interface ILocalGovtService
     {
-        List<ResponceLocalGovtDto> GetAllLocalGovtById(int id);
+        Task<List<ResponceLocalGovtDto>> GetAllLocalGovtById(int id);
     }
 }

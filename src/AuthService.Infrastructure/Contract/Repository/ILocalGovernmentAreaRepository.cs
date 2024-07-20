@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace AuthService.Infrastructure.Contract.Repository
 {
-    public interface ILocalGovernmentAreaRepository
+    public interface ILocalGovernmentAreaRepository: IGenericRepository<LocalGovernmentArea>
     {
-        List<ResponceLocalGovtDto> GetAllLocalGovtById(int id);
+        //List<ResponceLocalGovtDto> GetAllLocalGovtById(int id);
     }
 }

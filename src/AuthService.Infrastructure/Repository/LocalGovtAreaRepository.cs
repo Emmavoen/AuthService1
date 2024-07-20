@@ -3,6 +3,7 @@ using AuthService.Domain.DTOs.Responce;
 using AuthService.Domain.Entity;
 using AuthService.Infrastructure.Contract;
 using AuthService.Infrastructure.Contract.Repository;
+using AuthService.Infrastructure.Repository.GenericRepository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,25 +13,25 @@ using System.Threading.Tasks;
 
 namespace AuthService.Infrastructure.Repository
 {
-    public class LocalGovtAreaRepository : ILocalGovernmentAreaRepository
+    public class LocalGovtAreaRepository : GenericRepository<LocalGovernmentArea>,ILocalGovernmentAreaRepository
     {
-        private readonly ILocalGovtService localGovtService;
+       // private readonly ILocalGovtService localGovtService;
 
-        public LocalGovtAreaRepository(ILocalGovtService _localGovtService)
+        public LocalGovtAreaRepository( AppDbContext context) : base(context) 
         {
-            localGovtService = _localGovtService;
+            //localGovtService = _localGovtService;
         }
 
-
-        public List<ResponceLocalGovtDto> GetAllLocalGovtById(int id)
+       
+        /*public List<ResponceLocalGovtDto> GetAllLocalGovtById(int id)
         {
 
 
             var result = localGovtService.GetAllLocalGovtById(id);
 
             return result;
-            /*var record = appDbContext.LocalGovernmentAreas.Where(x => x.StateId == id).ToList();
-            return record;*/
-        }
+            *//*var record = appDbContext.LocalGovernmentAreas.Where(x => x.StateId == id).ToList();
+            return record;*//*
+        }*/
     }
 }

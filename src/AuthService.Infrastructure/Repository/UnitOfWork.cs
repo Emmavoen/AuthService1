@@ -11,11 +11,14 @@ namespace AuthService.Infrastructure.Repository
     public class UnitOfWork : IUnitOfWork
     {
         private readonly AppDbContext appDbContext;
-       public IUserRepository Users {  get; }
-        public UnitOfWork(AppDbContext _appDbContext, IUserRepository userRepository)
+        public IUserRepository Users {  get; }
+
+        public ILocalGovernmentAreaRepository LocalGovernmentArea { get; }
+        public UnitOfWork(AppDbContext _appDbContext, IUserRepository userRepository, ILocalGovernmentAreaRepository localGovernmentArea)
         {
             appDbContext = _appDbContext;
             Users = userRepository;
+            LocalGovernmentArea = localGovernmentArea;
         }
 
         public async  Task<int> Save()

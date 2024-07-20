@@ -15,7 +15,7 @@ namespace AuthService.Infrastructure.Repository
     public class UserRepository : GenericRepository<AppUser>, IUserRepository
     {
         public UserRepository(AppDbContext context) : base(context)
-        {
+        {   
 
         }
 
