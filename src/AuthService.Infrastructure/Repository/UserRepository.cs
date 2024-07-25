@@ -19,17 +19,9 @@ namespace AuthService.Infrastructure.Repository
 
         }
 
-        public async Task<bool> UserExist(RegistrationDTOs request)
-        {
-            return await appDbContext.Users.AnyAsync(x => x.Email == request.Email);
+      
 
-        }
 
-        /*public async Task<bool> UserExist(RegistrationDTOs request)
-        {
-           return await appDbContext.Users.AnyAsync(x => x.Email == request.Email);
-        }
-    }*/
     }
 
 }

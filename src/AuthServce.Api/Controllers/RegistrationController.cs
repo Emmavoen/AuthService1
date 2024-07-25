@@ -33,7 +33,7 @@ namespace AuthService.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Register( RegistrationDTOs requestDto)
+         async Task<IActionResult> Register( RegistrationDTOs requestDto)
         {
             //validate incoming request
             /* if (ModelState.IsValid)

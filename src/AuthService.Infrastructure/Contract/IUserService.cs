@@ -11,6 +11,9 @@ namespace AuthService.Infrastructure.Contract
     public interface IUserService
     {
         Task<UserResponseDetails> Register(RegistrationDTOs RegDtos);
+        Task<string> Login(LoginDTOs loginDTOs);
+
+        Task<string> UpdatePassword(UpdatePasswordDTOs loginDTOs);
 
     }
 }

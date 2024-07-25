@@ -35,6 +35,7 @@ namespace AuthService.Service.Implementation
             //check if email already exists
             var user_exist = await _userManager.FindByEmailAsync(RegDtos.Email);
 
+
             if (user_exist != null)
             {
                 return $"User with the email {RegDtos.Email} already exists. please Login";

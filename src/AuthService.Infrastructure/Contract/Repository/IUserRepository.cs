@@ -10,10 +10,6 @@ namespace AuthService.Infrastructure.Contract.Repository
 {
     public interface IUserRepository : IGenericRepository<AppUser>
     {
-        //Task< string > Login();
-
-        Task<bool> UserExist(RegistrationDTOs request);
-        
-
+ 
     }
 }

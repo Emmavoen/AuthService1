@@ -36,6 +36,7 @@ namespace AuthService.Api
         {
 
             //services.AddControllers();
+            services.AddHttpClient();
             services.AddControllers().AddNewtonsoftJson(options =>
             options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             );

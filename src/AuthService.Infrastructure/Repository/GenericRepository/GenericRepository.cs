@@ -1,4 +1,6 @@
-﻿using AuthService.Infrastructure.Contract.Repository;
+﻿using AuthService.Domain.DTOs.Request;
+using AuthService.Domain.Entity;
+using AuthService.Infrastructure.Contract.Repository;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -57,21 +59,21 @@ namespace AuthService.Infrastructure.Repository.GenericRepository
 
         }
 
-        public async Task<IEnumerable<T>> GetAllByColumnAsync(Func<T, bool> predicate)
+        public async Task<IEnumerable<T>> GetAllByColumnAsync(Expression<Func<T, bool>> predicate)
         {
-            return await Task.Run(() => dbSet.Where(predicate).AsEnumerable());
+            return await dbSet.Where(predicate).ToListAsync();
+        }
+
+        public async Task<T> GetByColumnAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await dbSet.FirstOrDefaultAsync(predicate);
         }
 
 
-        /*public void Save()
+        public async Task Update(T entity)
         {
-            _appDbContext.SaveChanges();
-        }*/
-
-        public void Update(T entity)
-        {
-            dbSet.Attach(entity);
-            appDbContext.Entry(entity).State = EntityState.Modified;
+            //dbSet.Attach(entity);
+             appDbContext.Entry(entity).State = EntityState.Modified;
             // appDbContext.SaveChanges();
             //throw new NotImplementedException();
         }

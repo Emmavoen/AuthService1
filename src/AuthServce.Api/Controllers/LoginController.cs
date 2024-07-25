@@ -18,7 +18,7 @@ namespace AuthService.Api.Controllers
 
 
         [HttpPost]
-        public async Task<string> Login(LoginDTOs request)
+         async Task<string> Login(LoginDTOs request)
         {
             var result = await loginRepository.Login(request);
             return result;

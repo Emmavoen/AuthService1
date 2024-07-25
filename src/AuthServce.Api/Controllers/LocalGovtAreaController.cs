@@ -2,6 +2,7 @@
 using AuthService.Infrastructure.Contract.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace AuthService.Api.Controllers
 {
@@ -20,10 +21,10 @@ namespace AuthService.Api.Controllers
 
         [HttpGet("{id}")]
         
-        public IActionResult GetAllLocalGovtById(int id)
+        public async  Task<IActionResult> GetAllLocalGovtById(int id)
         {
 
-            var result = area.GetAllLocalGovtById(id);
+            var result = await area.GetAllLocalGovtById(id);
             return Ok(result);
 
         }
