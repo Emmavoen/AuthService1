@@ -11,6 +11,8 @@ namespace AuthService.Infrastructure.Contract
     {
         IUserRepository Users { get; }
         ILocalGovernmentAreaRepository LocalGovernmentArea { get; }
+
+        IVerificationTokenRepository VerificationTokens { get; }
         Task<int> Save();
     }
 }

@@ -1,6 +1,7 @@
 ﻿using AuthService.Domain.DTOs.Request;
 using AuthService.Domain.DTOs.Responce;
 using AuthService.Domain.Entity;
+using AuthService.Domain.Enums;
 using AuthService.Infrastructure.Contract;
 using AuthService.Infrastructure.Helper;
 using Microsoft.AspNetCore.Identity;
@@ -15,6 +16,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Claims;
+//using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,13 +28,14 @@ namespace AuthService.Service.Implementation
         private readonly IConfiguration _configuration;
         private readonly ILogger<UserService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly UserManager<AppUser> _userManager;
 
         public SignInManager<AppUser> _signInManager { get; }
 
-        public UserService(IUnitOfWork _unitOfWork, IConfiguration configuration, ILogger<UserService> logger, SignInManager<AppUser> signInManager, IHttpClientFactory httpClientFactory)
+        public UserService(IUnitOfWork _unitOfWork, IConfiguration configuration, ILogger<UserService> logger, SignInManager<AppUser> signInManager, IHttpClientFactory httpClientFactory, UserManager<AppUser> userManager)
         {
             UnitOfWork = _unitOfWork;
-            
+            _userManager = userManager;
             _logger = logger;
             _signInManager = signInManager;
             _configuration = configuration;
@@ -101,28 +104,29 @@ namespace AuthService.Service.Implementation
 
                 };
 
+                var emailObject = new EmailConfirmation
+                {
+                    UserEmail = newuser.Email,
+                    Token = await _userManager.GenerateEmailConfirmationTokenAsync(newuser),
+                    FirstName = newuser.FirstName
+                };
+
                 var add = await UnitOfWork.Users.Add(newuser);
+                await SendConfirmationEmail(emailObject);
                 var save = await UnitOfWork.Save();
 
-                if (save < 1)
+               /* if (save < 1)
                 {
-                    _logger.LogError( "Server Error");
+                    _logger.LogError( "Notsaved");
                     return new UserResponseDetails()
                     {
                         Message = $"Server Error",
                         IsSuccess = false
                     };
 
-                }
-                var httpclient = _httpClientFactory.CreateClient();
-                var emailModel = new
-                {
-                    To = RegDtos.Email,
-                    Subject = "Account Registration",
-                    Body = $"Account Number{newuser.AccountNumber}, Password : {RegDtos.Password}"
-
-                };
-                var sendEmail = await httpclient.PostAsJsonAsync("https://localhost:7168/api/Notification", emailModel);
+                }*/
+              
+            
 
 
                 var responseDto = new ResponceRegistationDto()
@@ -156,7 +160,7 @@ namespace AuthService.Service.Implementation
             }
             catch (Exception ex)
             {
-                _logger.LogError( "User Successfuly created");
+                _logger.LogError($"Err from user registration ==> {ex.Message}; stacktrace error ==> {ex.StackTrace}");
                 return new UserResponseDetails()
                 {
 
@@ -284,8 +288,37 @@ namespace AuthService.Service.Implementation
 
             return token;
         }
+        private async Task SendConfirmationEmail(EmailConfirmation request)
+        {// create a object for email confirmation
+            
+            
+            var httpclient = _httpClientFactory.CreateClient();
+            var emailModel = new
+            {
+                To = request.UserEmail,
+                Subject = "Account Registration",
+                Body = $"Hello {request.FirstName}, here is ur verification token: {request.Token}"
 
+            };
+            var sendEmail = await httpclient.PostAsJsonAsync("https://localhost:7168/api/Notification", emailModel);
+
+            var verificationToken = new VerificationToken
+            {
+                Email = request.UserEmail,
+                Token = request.Token,
+                ActionType = ActionTypeEnum.EmailConfirmation.ToString()
+
+            };
+            await UnitOfWork.VerificationTokens.Add(verificationToken);
+           
+
+        }
     }
 
- 
+   /* public  class EmailConfirmation
+    {
+        public string UserEmail { get; set; }
+        public string FirstName { get; set; }
+        public string  Token { get; set; }
+    }*/
 }

@@ -1,4 +1,5 @@
 ﻿using AuthService.Domain.DTOs.Request;
+using AuthService.Domain.Enums;
 using AuthService.Infrastructure.Contract;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;

@@ -13,12 +13,15 @@ namespace AuthService.Infrastructure.Repository
         private readonly AppDbContext appDbContext;
         public IUserRepository Users {  get; }
 
+        public IVerificationTokenRepository VerificationTokens { get; }
+
         public ILocalGovernmentAreaRepository LocalGovernmentArea { get; }
-        public UnitOfWork(AppDbContext _appDbContext, IUserRepository userRepository, ILocalGovernmentAreaRepository localGovernmentArea)
+        public UnitOfWork(AppDbContext _appDbContext, IUserRepository userRepository, ILocalGovernmentAreaRepository localGovernmentArea, IVerificationTokenRepository verificationTokens)
         {
             appDbContext = _appDbContext;
             Users = userRepository;
             LocalGovernmentArea = localGovernmentArea;
+            VerificationTokens = verificationTokens;
         }
 
         public async  Task<int> Save()

@@ -15,6 +15,7 @@ namespace AuthService.Infrastructure
         public virtual DbSet<Country> Countries { get; set; }
         public virtual DbSet<Gender> Genders { get; set; }
         public virtual DbSet<LocalGovernmentArea> LocalGovernmentAreas { get; set; }
+        public virtual DbSet<VerificationToken> VerificationTokens { get; set; }
 
     }
 

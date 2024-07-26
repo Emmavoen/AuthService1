@@ -62,9 +62,10 @@ namespace AuthService.Api
             services.AddTransient<IAuthLoginService, AuthLoginService>();
             services.AddTransient<IRegistrationRepository, RegistrationRepository>();
             services.AddTransient<ILoginRepository , LoginRepository>();
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IUserService, UserService>();
+            services.AddTransient<IUnitOfWork, UnitOfWork>();
+            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IVerificationTokenRepository, VerificationTokenRepository>();
 
 
 
