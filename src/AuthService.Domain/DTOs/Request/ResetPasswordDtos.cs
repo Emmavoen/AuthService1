@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace AuthService.Domain.DTOs.Request
 {
-    public class EmailConfirmation
+    public class ResetPasswordDtos
     {
-        public string UserEmail { get; set; }
-        public string FirstName { get; set; }
+        public string Password { get; set; }
+        public string Email { get; set; }
         public string Token { get; set; }
-    }
 
+
+    }
 }

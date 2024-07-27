@@ -60,5 +60,21 @@ namespace AuthService.Api.Controllers
             var result = await _userService.UpdatePassword(request);
             return Ok( result );
         }
+
+        [HttpPost]
+        [Route("ResetPassword")]
+        public async Task<IActionResult> Resetpassword(ResetPasswordDtos request)
+        {
+            var result = await _userService.ResetPassword(request);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route(" EmailConfirmation")]
+        public async Task<string> EmailConfirmation(ResetPasswordDtos request)
+        {
+            var result = await _userService.EmailConfirmation(request);
+            return result;
+        }
     }
 }

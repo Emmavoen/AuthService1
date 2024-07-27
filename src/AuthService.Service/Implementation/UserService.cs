@@ -104,7 +104,7 @@ namespace AuthService.Service.Implementation
 
                 };
 
-                var emailObject = new EmailConfirmation
+                var emailObject = new SendEmailConfirmation
                 {
                     UserEmail = newuser.Email,
                     Token = await _userManager.GenerateEmailConfirmationTokenAsync(newuser),
@@ -174,6 +174,47 @@ namespace AuthService.Service.Implementation
 
         }
 
+        public async Task<string> ResetPassword(ResetPasswordDtos request)
+        {
+            var user = await UnitOfWork.Users.GetByColumnAsync(x => x.Email == request.Email);
+            if (user == null)
+            {
+                return  "User Doesnt Exist";
+            }
+            var hashPassword =  Hash.HashPassword(request.Password);
+
+            var emailObject = new SendEmailConfirmation
+            {
+                UserEmail = request.Email,
+                Subject = "Reset Password",
+                Token = await _userManager.GenerateEmailConfirmationTokenAsync(user),
+                FirstName = user.FirstName
+            };
+             await SendConfirmationEmail(emailObject);
+            if (await ConfirmToken(request.Token, request.Email))
+            {
+                user.PasswordHash = hashPassword;
+                await UnitOfWork.Users.Update(user);
+                await UnitOfWork.Save();
+                return "Password reset successfull";
+            }
+
+            return "Password reset failed";
+
+        }
+        public async Task<string> EmailConfirmation(ResetPasswordDtos request)
+        {
+            var user = await UnitOfWork.Users.GetByColumnAsync(x => x.Email == request.Email);
+
+            if (await ConfirmToken(request.Token, request.Email))
+            {
+                user.EmailConfirmed = true;
+                await UnitOfWork.Users.Update(user);
+                await UnitOfWork.Save();
+                return "Your Email has beem confirmed";
+            }
+            return "Email Confirmation Failed";
+        }
 
         public async Task<string> Login(LoginDTOs loginDTOs)
         {
@@ -288,7 +329,7 @@ namespace AuthService.Service.Implementation
 
             return token;
         }
-        private async Task SendConfirmationEmail(EmailConfirmation request)
+        private async Task SendConfirmationEmail(SendEmailConfirmation request)
         {// create a object for email confirmation
             
             
@@ -296,7 +337,7 @@ namespace AuthService.Service.Implementation
             var emailModel = new
             {
                 To = request.UserEmail,
-                Subject = "Account Registration",
+                Subject = request.Subject,
                 Body = $"Hello {request.FirstName}, here is ur verification token: {request.Token}"
 
             };
@@ -313,12 +354,18 @@ namespace AuthService.Service.Implementation
            
 
         }
+
+        public async Task<bool> ConfirmToken(string token, string Email)
+        {
+            var userWithToken = await UnitOfWork.VerificationTokens.GetByColumnAsync(x => x.Email == Email);
+            
+            if( userWithToken.Email == Email && userWithToken.Token == token )
+            {
+                return true;
+            }
+            return false;
+        }
     }
 
-   /* public  class EmailConfirmation
-    {
-        public string UserEmail { get; set; }
-        public string FirstName { get; set; }
-        public string  Token { get; set; }
-    }*/
+ 
 }

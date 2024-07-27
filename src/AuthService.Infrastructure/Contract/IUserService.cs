@@ -14,6 +14,8 @@ namespace AuthService.Infrastructure.Contract
         Task<string> Login(LoginDTOs loginDTOs);
 
         Task<string> UpdatePassword(UpdatePasswordDTOs loginDTOs);
+        Task<string> EmailConfirmation(ResetPasswordDtos request);
+        Task<string> ResetPassword(ResetPasswordDtos request);
 
     }
 }
