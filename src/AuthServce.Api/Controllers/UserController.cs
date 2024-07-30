@@ -76,5 +76,14 @@ namespace AuthService.Api.Controllers
             var result = await _userService.EmailConfirmation(request);
             return result;
         }
+
+        [HttpPost]
+        [Route(" RequestResetPassword")]
+        public async Task<string> RequestResetPassword(string email)
+        {
+            var result = await _userService.RequestResetPassword(email);
+            return result;
+        }
+
     }
 }

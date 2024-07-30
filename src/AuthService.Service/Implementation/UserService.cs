@@ -47,13 +47,9 @@ namespace AuthService.Service.Implementation
             try
             {
                 //generating token
-                var authClaims = new List<Claim>
-        {
-            new(ClaimTypes.Name, RegDtos.Username),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        };
+        
 
-                var token = GetToken(authClaims);
+                var token = GetToken(RegDtos.Username);
 
                 var finalToken = new JwtSecurityTokenHandler().WriteToken(token);
 
@@ -104,29 +100,28 @@ namespace AuthService.Service.Implementation
 
                 };
 
+                var add = await UnitOfWork.Users.Add(newuser);
                 var emailObject = new SendEmailConfirmation
                 {
                     UserEmail = newuser.Email,
-                    Token = await _userManager.GenerateEmailConfirmationTokenAsync(newuser),
-                    FirstName = newuser.FirstName
+                    Token = GenerateRandomToken(),
+                    FirstName = newuser.FirstName,
+                    Subject = "Account Registration"
                 };
 
-                var add = await UnitOfWork.Users.Add(newuser);
-                await SendConfirmationEmail(emailObject);
-                var save = await UnitOfWork.Save();
-
-               /* if (save < 1)
+                
+               var send =  await SendConfirmationEmail(emailObject);
+                if (!send)
                 {
-                    _logger.LogError( "Notsaved");
                     return new UserResponseDetails()
                     {
-                        Message = $"Server Error",
-                        IsSuccess = false
+                        IsSuccess = false,
+                        Message = "User registration failed"
                     };
-
-                }*/
-              
-            
+                }
+                  await SaveVerificationToken(emailObject.UserEmail, emailObject.Token, ActionTypeEnum.EmailConfirmation.ToString());
+               // await UnitOfWork.VerificationTokens.Update(saveVerificationToken);
+                var save = await UnitOfWork.Save();
 
 
                 var responseDto = new ResponceRegistationDto()
@@ -182,16 +177,9 @@ namespace AuthService.Service.Implementation
                 return  "User Doesnt Exist";
             }
             var hashPassword =  Hash.HashPassword(request.Password);
+            var confirm = await ConfirmToken(request.Token, request.Email, ActionTypeEnum.ResetPassword.ToString());
 
-            var emailObject = new SendEmailConfirmation
-            {
-                UserEmail = request.Email,
-                Subject = "Reset Password",
-                Token = await _userManager.GenerateEmailConfirmationTokenAsync(user),
-                FirstName = user.FirstName
-            };
-             await SendConfirmationEmail(emailObject);
-            if (await ConfirmToken(request.Token, request.Email))
+            if (confirm)
             {
                 user.PasswordHash = hashPassword;
                 await UnitOfWork.Users.Update(user);
@@ -202,11 +190,36 @@ namespace AuthService.Service.Implementation
             return "Password reset failed";
 
         }
+
+        public async Task<string> RequestResetPassword(string Email)
+        {
+            var user = await UnitOfWork.Users.GetByColumnAsync(x => x.Email == Email);
+            if (user == null)
+            {
+                return "User does not exist";
+            }
+            var emailObject = new SendEmailConfirmation
+            {
+                UserEmail = Email,
+                Subject = "Reset Password",
+                Token = GenerateRandomToken(),
+                FirstName = user.FirstName
+            };
+           var send =  await SendConfirmationEmail(emailObject);
+            if (send)
+            {
+                 await SaveVerificationToken(emailObject.UserEmail,emailObject.Token, ActionTypeEnum.ResetPassword.ToString());
+                await UnitOfWork.Save();
+                return "Email successfully sent";
+            }
+
+            return " server error";
+        }
         public async Task<string> EmailConfirmation(ResetPasswordDtos request)
         {
             var user = await UnitOfWork.Users.GetByColumnAsync(x => x.Email == request.Email);
 
-            if (await ConfirmToken(request.Token, request.Email))
+            if (await ConfirmToken(request.Token, request.Email, ActionTypeEnum.EmailConfirmation.ToString()))
             {
                 user.EmailConfirmed = true;
                 await UnitOfWork.Users.Update(user);
@@ -247,13 +260,8 @@ namespace AuthService.Service.Implementation
             };
             var sendEmail = await httpclient.PostAsJsonAsync("https://localhost:7168/api/Notification", emailModel);
 
-            var authClaims = new List<Claim>
-            {
-            new(ClaimTypes.Name, loginDTOs.Username),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-             };
-
-            var token = GetToken(authClaims);
+           
+            var token = GetToken(loginDTOs.Username);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -316,8 +324,13 @@ namespace AuthService.Service.Implementation
 
 
 
-        private JwtSecurityToken GetToken(IEnumerable<Claim> authClaims)
+        private JwtSecurityToken GetToken(string userName)
         {
+            var authClaims = new List<Claim>
+        {
+            new(ClaimTypes.Name, userName),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        };
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
 
             var token = new JwtSecurityToken(
@@ -329,7 +342,7 @@ namespace AuthService.Service.Implementation
 
             return token;
         }
-        private async Task SendConfirmationEmail(SendEmailConfirmation request)
+        private async Task<bool> SendConfirmationEmail(SendEmailConfirmation request)
         {// create a object for email confirmation
             
             
@@ -343,27 +356,61 @@ namespace AuthService.Service.Implementation
             };
             var sendEmail = await httpclient.PostAsJsonAsync("https://localhost:7168/api/Notification", emailModel);
 
-            var verificationToken = new VerificationToken
+            // Check if the email was sent successfully
+            if (sendEmail.IsSuccessStatusCode)
             {
-                Email = request.UserEmail,
-                Token = request.Token,
-                ActionType = ActionTypeEnum.EmailConfirmation.ToString()
+                // Create the verification token object
+              
+                return true;
+            }
 
-            };
-            await UnitOfWork.VerificationTokens.Add(verificationToken);
-           
+            // Handle the error appropriately (log, throw exception, etc.)
+            return false;
+        
+
 
         }
 
-        public async Task<bool> ConfirmToken(string token, string Email)
+        public async Task<bool> ConfirmToken(string token, string Email ,string actionType)
         {
-            var userWithToken = await UnitOfWork.VerificationTokens.GetByColumnAsync(x => x.Email == Email);
+            var userWithToken = await UnitOfWork.VerificationTokens.GetByColumnAsync(x => x.Email == Email && x.ActionType == actionType);
             
             if( userWithToken.Email == Email && userWithToken.Token == token )
             {
                 return true;
             }
             return false;
+        }
+
+        public async  Task SaveVerificationToken(string email, string token, string actionType)
+        {
+     
+            var existingToken = await UnitOfWork.VerificationTokens.GetByColumnAsync(x => x.Email == email &&x.ActionType == actionType);
+            if (existingToken == null) {
+                var verificationToken = new VerificationToken
+                {
+                    Email = email,
+                    Token = token,
+                    ActionType = actionType,
+                    DateCreated = DateTime.Now
+                };
+                await UnitOfWork.VerificationTokens.Add(verificationToken);
+            }
+            else
+            {
+                existingToken.Token = token;
+                existingToken.DateCreated = DateTime.Now;
+                await UnitOfWork.VerificationTokens.Update(existingToken);
+            }
+           
+            
+        }
+
+        static string GenerateRandomToken()
+        {
+            Random random = new Random();
+            int tokenNumber = random.Next(100000, 1000000); // Generates a number between 100000 and 999999
+            return tokenNumber.ToString();
         }
     }
 
