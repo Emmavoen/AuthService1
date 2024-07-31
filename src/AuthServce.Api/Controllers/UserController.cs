@@ -2,6 +2,7 @@
 using AuthService.Domain.Enums;
 using AuthService.Infrastructure.Contract;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -55,6 +56,7 @@ namespace AuthService.Api.Controllers
 
         [HttpPost]
         [Route("UpdatePassword")]
+        [Authorize]
         public async Task<IActionResult> Updatepassword(UpdatePasswordDTOs request)
         {
             var result = await _userService.UpdatePassword(request);

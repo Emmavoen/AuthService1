@@ -47,7 +47,7 @@ namespace AuthService.Service.Implementation
             try
             {
                 //generating token
-        
+
 
                 var token = GetToken(RegDtos.Username);
 
@@ -58,11 +58,11 @@ namespace AuthService.Service.Implementation
                 //check if email already exists
                 var user_exist = await UnitOfWork.Users.GetByColumnAsync(x => x.Email == RegDtos.Email);
 
-                
+
 
                 if (user_exist != null)
                 {
-                    _logger.LogError( "User already Exist");
+                    _logger.LogError("User already Exist");
                     return new UserResponseDetails()
                     {
                         Message = $"User with the email {RegDtos.Email} already exists. please Login",
@@ -109,8 +109,8 @@ namespace AuthService.Service.Implementation
                     Subject = "Account Registration"
                 };
 
-                
-               var send =  await SendConfirmationEmail(emailObject);
+
+                var send = await SendConfirmationEmail(emailObject);
                 if (!send)
                 {
                     return new UserResponseDetails()
@@ -119,8 +119,8 @@ namespace AuthService.Service.Implementation
                         Message = "User registration failed"
                     };
                 }
-                  await SaveVerificationToken(emailObject.UserEmail, emailObject.Token, ActionTypeEnum.EmailConfirmation.ToString());
-               // await UnitOfWork.VerificationTokens.Update(saveVerificationToken);
+                await SaveVerificationToken(emailObject.UserEmail, emailObject.Token, ActionTypeEnum.EmailConfirmation.ToString());
+                // await UnitOfWork.VerificationTokens.Update(saveVerificationToken);
                 var save = await UnitOfWork.Save();
 
 
@@ -144,7 +144,7 @@ namespace AuthService.Service.Implementation
                 };
 
 
-                _logger.LogError( "User Successfully created");
+                _logger.LogError("User Successfully created");
 
                 return new UserResponseDetails()
                 {
@@ -174,16 +174,19 @@ namespace AuthService.Service.Implementation
             var user = await UnitOfWork.Users.GetByColumnAsync(x => x.Email == request.Email);
             if (user == null)
             {
-                return  "User Doesnt Exist";
+                return "User Doesnt Exist";
             }
-            var hashPassword =  Hash.HashPassword(request.Password);
+            var hashPassword = Hash.HashPassword(request.Password);
             var confirm = await ConfirmToken(request.Token, request.Email, ActionTypeEnum.ResetPassword.ToString());
 
             if (confirm)
             {
                 user.PasswordHash = hashPassword;
+                user.AccessFailedCount = 0;
+                user.Status = StatusEnum.Active.ToString();
                 await UnitOfWork.Users.Update(user);
                 await UnitOfWork.Save();
+
                 return "Password reset successfull";
             }
 
@@ -205,10 +208,10 @@ namespace AuthService.Service.Implementation
                 Token = GenerateRandomToken(),
                 FirstName = user.FirstName
             };
-           var send =  await SendConfirmationEmail(emailObject);
+            var send = await SendConfirmationEmail(emailObject);
             if (send)
             {
-                 await SaveVerificationToken(emailObject.UserEmail,emailObject.Token, ActionTypeEnum.ResetPassword.ToString());
+                await SaveVerificationToken(emailObject.UserEmail, emailObject.Token, ActionTypeEnum.ResetPassword.ToString());
                 await UnitOfWork.Save();
                 return "Email successfully sent";
             }
@@ -231,37 +234,56 @@ namespace AuthService.Service.Implementation
 
         public async Task<string> Login(LoginDTOs loginDTOs)
         {
-             
+
             var hashPassword = Hash.HashPassword(loginDTOs.Password);
             var user = await UnitOfWork.Users.GetByColumnAsync(x => x.Email == loginDTOs.Email);
 
-
-            if (user == null)
+            if ( user == null) 
             {
-                return "User does not exist";
+                return "Invalid Login Credentials";
             }
 
-            if (user.Email != loginDTOs.Email)
-            {
-                return "Invalid Email Address";
-            }
-            if (user.PasswordHash != hashPassword)
-            {
-                return "Wrong Password";
+            if ( user.Status == StatusEnum.Locked.ToString()){
+                return "Account is Currently locked. Please Reset Your Password.";
             }
 
-            var httpclient = _httpClientFactory.CreateClient();
-            var emailModel = new
+            if (user.PasswordHash != hashPassword )
             {
-                To = loginDTOs.Email,
-                Subject = "Account Signin",
-                Body = $"There is a new signin In your account"
+                user.AccessFailedCount++;
+                //await UnitOfWork.Users.Update(user);
+                if (user.AccessFailedCount >= 3)
+                {
+                    user.Status = StatusEnum.Locked.ToString();
+                    
+                }
+                await UnitOfWork.Users.Update(user);
+                await UnitOfWork.Save();
 
-            };
-            var sendEmail = await httpclient.PostAsJsonAsync("https://localhost:7168/api/Notification", emailModel);
+                return "Invalid Login Credentials";
+            }
 
-           
+            if(!user.EmailConfirmed)
+            {
+                var emailModel = new SendEmailConfirmation
+                {
+                    UserEmail = loginDTOs.Email,
+                    Subject = "Account Registration",
+                    Token = GenerateRandomToken(),
+                    FirstName = user.FirstName
+
+                };
+                var sendToken = await SendConfirmationEmail(emailModel);
+                if(sendToken)
+                {
+                    await SaveVerificationToken(emailModel.UserEmail,emailModel.Token, ActionTypeEnum.EmailConfirmation.ToString());
+                    await UnitOfWork.Save();
+                    return "Your Email has not been confirmed. A token has been sent for you to confirm your Email.";
+                }
+
+                return "Unknown error";
+            }
             var token = GetToken(loginDTOs.Username);
+            
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -273,19 +295,19 @@ namespace AuthService.Service.Implementation
             var user = await UnitOfWork.Users.GetByColumnAsync(x => x.Email == updateDTOs.Email);
             if (user == null)
             {
-                return  "Invalid Email Address";
+                return "Invalid Email Address";
             }
 
-           if(user.PasswordHash != hashOldPassword)
+            if (user.PasswordHash != hashOldPassword)
             {
                 return "Invalid old password";
             }
 
-           user.PasswordHash = hashNewPassword;
-           await UnitOfWork.Users.Update(user);
-           var result =   await UnitOfWork.Save();
+            user.PasswordHash = hashNewPassword;
+            await UnitOfWork.Users.Update(user);
+            var result = await UnitOfWork.Save();
 
-            if(result < 1)
+            if (result < 1)
             {
                 return "failed";
             }
@@ -293,7 +315,7 @@ namespace AuthService.Service.Implementation
             return "Success";
         }
 
-    
+
 
         private string CalculateAgeFromDateOfBirth(DateTime Dob)
         {
@@ -344,8 +366,8 @@ namespace AuthService.Service.Implementation
         }
         private async Task<bool> SendConfirmationEmail(SendEmailConfirmation request)
         {// create a object for email confirmation
-            
-            
+
+
             var httpclient = _httpClientFactory.CreateClient();
             var emailModel = new
             {
@@ -360,33 +382,42 @@ namespace AuthService.Service.Implementation
             if (sendEmail.IsSuccessStatusCode)
             {
                 // Create the verification token object
-              
+
                 return true;
             }
 
             // Handle the error appropriately (log, throw exception, etc.)
             return false;
-        
+
 
 
         }
 
-        public async Task<bool> ConfirmToken(string token, string Email ,string actionType)
+        public async Task<bool> ConfirmToken(string token, string Email, string actionType)
         {
             var userWithToken = await UnitOfWork.VerificationTokens.GetByColumnAsync(x => x.Email == Email && x.ActionType == actionType);
-            
-            if( userWithToken.Email == Email && userWithToken.Token == token )
+            if (userWithToken == null)
+            {
+                return false;
+            }
+            // Define the expiration duration
+            var expirationDuration = TimeSpan.FromMinutes(3);
+
+            // Calculate the time elapsed since the token was created
+            var timeElapsed = DateTime.Now - userWithToken.DateCreated;
+            if (userWithToken.Email == Email && userWithToken.Token == token && timeElapsed < expirationDuration)
             {
                 return true;
             }
             return false;
         }
 
-        public async  Task SaveVerificationToken(string email, string token, string actionType)
+        public async Task SaveVerificationToken(string email, string token, string actionType)
         {
-     
-            var existingToken = await UnitOfWork.VerificationTokens.GetByColumnAsync(x => x.Email == email &&x.ActionType == actionType);
-            if (existingToken == null) {
+
+            var existingToken = await UnitOfWork.VerificationTokens.GetByColumnAsync(x => x.Email == email && x.ActionType == actionType);
+            if (existingToken == null)
+            {
                 var verificationToken = new VerificationToken
                 {
                     Email = email,
@@ -402,8 +433,8 @@ namespace AuthService.Service.Implementation
                 existingToken.DateCreated = DateTime.Now;
                 await UnitOfWork.VerificationTokens.Update(existingToken);
             }
-           
-            
+
+
         }
 
         static string GenerateRandomToken()
@@ -414,5 +445,5 @@ namespace AuthService.Service.Implementation
         }
     }
 
- 
+
 }
