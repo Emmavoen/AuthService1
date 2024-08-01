@@ -73,7 +73,7 @@ namespace AuthService.Infrastructure.Repository.GenericRepository
         public async Task Update(T entity)
         {
             //dbSet.Attach(entity);
-             appDbContext.Entry(entity).State = EntityState.Modified;
+              appDbContext.Entry(entity).State = EntityState.Modified;
             // appDbContext.SaveChanges();
             //throw new NotImplementedException();
         }

@@ -66,6 +66,7 @@ namespace AuthService.Api
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IVerificationTokenRepository, VerificationTokenRepository>();
+            services.AddTransient<IJwtValidationService, JwtValidationService>();
 
 
 
