@@ -352,6 +352,7 @@ namespace AuthService.Service.Implementation
         {
             new(ClaimTypes.Name, userName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+
         };
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
 

@@ -44,6 +44,7 @@ namespace AuthService.Api
             services.AddLogging(logging =>
             {
                 Log.Logger = new LoggerConfiguration()
+                
                     .Enrich.FromLogContext()
                     .MinimumLevel.Debug()
                     .WriteTo.Console()
