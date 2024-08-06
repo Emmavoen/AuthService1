@@ -10,6 +10,6 @@ namespace AuthService.Infrastructure.Contract
 {
     public interface IStateService
     {
-        List<ResponceStateDto> StateNamesByCountryId(int id);
+        Task<List<ResponceStateDto>> StateNamesByCountryId(int id);
     }
 }

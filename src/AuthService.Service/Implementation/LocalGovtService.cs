@@ -15,41 +15,32 @@ namespace AuthService.Service.Implementation
     public class LocalGovtService : ILocalGovtService
     {
 
-        private readonly AppDbContext appDbContext;
+        
         public IUnitOfWork _unitOfWork;
-        public LocalGovtService(AppDbContext _appDbContext, IUnitOfWork unitOfWork)
+        public LocalGovtService( IUnitOfWork unitOfWork)
         {
-            appDbContext = _appDbContext;
-            _unitOfWork = unitOfWork;
+           _unitOfWork = unitOfWork;
         }
-        /*public List<ResponceLocalGovtDto> GetAllLocalGovtById(int id)
-        {
-            var result = appDbContext.LocalGovernmentAreas.Where(x => x.StateId == id).Select(x => new ResponceLocalGovtDto
-            {
-                Id = x.Id,
-                Name = x.Name,
-
-            }).ToList();
-                return result;
-        }*/
 
         public async Task<List<ResponceLocalGovtDto>> GetAllLocalGovtById(int id)
         {
             List<ResponceLocalGovtDto> listResponse = new();
-            var result = await _unitOfWork.LocalGovernmentArea.GetAllByColumnAsync(x=> x.StateId == id);
+            var result = await _unitOfWork.LocalGovernmentArea.GetAllByColumnAsync(x => x.StateId == id);
 
             if (result == null)
             {
                 return listResponse;
             }
 
-            foreach (var item in result) { 
+            foreach (var item in result)
+            {
 
-            var response = new ResponceLocalGovtDto {
-                
-                Id = item.Id ,
-                Name = item.Name,
-            };
+                var response = new ResponceLocalGovtDto
+                {
+
+                    Id = item.Id,
+                    Name = item.Name,
+                };
 
                 listResponse.Add(response);
 

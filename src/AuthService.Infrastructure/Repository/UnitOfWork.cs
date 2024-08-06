@@ -13,6 +13,8 @@ namespace AuthService.Infrastructure.Repository
         private readonly AppDbContext appDbContext;
         public IUserRepository Users {  get; }
 
+        public IStatesRepository statesRepository{ get; }
+
         public IVerificationTokenRepository VerificationTokens { get; }
 
         public ILocalGovernmentAreaRepository LocalGovernmentArea { get; }

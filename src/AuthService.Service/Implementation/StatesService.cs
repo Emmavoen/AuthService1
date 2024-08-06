@@ -14,18 +14,18 @@ namespace AuthService.Service.Implementation
 {
     public class StatesService :IStateService
     {
-        private readonly AppDbContext appDbContext;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public StatesService(AppDbContext _appDbContext)
+        public StatesService(IUnitOfWork unitOfWork)
         {
-            appDbContext = _appDbContext;
+            _unitOfWork = unitOfWork;
         }
 
-        public List<ResponceStateDto> StateNamesByCountryId(int id)
+        public async Task<List<ResponceStateDto>> StateNamesByCountryId(int id)
         {
             List<ResponceStateDto> state = new();
 
-            var result = appDbContext.States.Where(x => x.CountryId == id);
+            var result = await _unitOfWork.statesRepository.GetAllByColumnAsync(x => x.CountryId == id);
             if (result == null)
             {
                 return state;

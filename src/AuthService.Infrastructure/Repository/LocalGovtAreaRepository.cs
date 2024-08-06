@@ -23,15 +23,6 @@ namespace AuthService.Infrastructure.Repository
         }
 
        
-        /*public List<ResponceLocalGovtDto> GetAllLocalGovtById(int id)
-        {
-
-
-            var result = localGovtService.GetAllLocalGovtById(id);
-
-            return result;
-            *//*var record = appDbContext.LocalGovernmentAreas.Where(x => x.StateId == id).ToList();
-            return record;*//*
-        }*/
+      
     }
 }

@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace AuthService.Infrastructure.Contract.Repository
 {
-    public interface IStatesRepository
+    public interface IStatesRepository : IGenericRepository<State>
     {
-        public List<ResponceStateDto> StateNamesByCountryId(int id);
+        //public List<ResponceStateDto> StateNamesByCountryId(int id);
          //List<StateDto> StateNamesByCountryId(int id);
     }
 }

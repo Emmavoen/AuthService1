@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AuthService.Infrastructure.Helper
+namespace AuthService.Service.Helper
 {
     public class Hash
     {
